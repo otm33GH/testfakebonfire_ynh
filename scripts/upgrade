@@ -1,0 +1,93 @@
+#!/bin/bash
+
+source /usr/share/yunohost/helpers
+
+#=================================================
+# STOP SYSTEMD SERVICES
+#=================================================
+ynh_script_progression "Stopping systemd services..."
+
+ynh_systemctl --service=$app --action="stop" --log_path="systemd"
+ynh_systemctl --service="meilisearch-$app" --action="stop" --log_path="/var/log/$app/meilisearch.log"
+
+#=================================================
+# ENABLE POSTGRESQL EXTENSIONS
+#=================================================
+ynh_script_progression "Enabling PostgreSQL extensions..."
+
+ynh_psql_db_shell <<< "CREATE EXTENSION IF NOT EXISTS citext WITH SCHEMA public;"
+
+ynh_psql_db_shell <<< "CREATE EXTENSION IF NOT EXISTS postgis WITH SCHEMA public;"
+
+#=================================================
+# UPDATE BONFIRE RELEASE
+#=================================================
+ynh_script_progression "Upgrading source files..."
+
+# Download and extract new pre-built release
+ynh_setup_source --dest_dir="$install_dir" --full_replace
+
+# Download and install Meilisearch
+meili_version="$(cat "$YNH_APP_BASEDIR/manifest.toml" | toml_to_json | 
+jq -r '.resources.sources.meili.amd64.url
+       | capture("/v(?<version>[0-9.]+)/")
+       | .version')"
+ynh_setup_source --dest_dir="$install_dir" --source_id="meili"
+chmod +x "$install_dir/meilisearch"
+
+# Ensure directories exist
+#mkdir -p "$data_dir/uploads"
+#mkdir -p "$data_dir/meilisearch"
+echo $meili_version > "$data_dir/meilisearch/VERSION"
+chown -R $app:www-data "$install_dir"
+chown -R $app:www-data "$data_dir"
+
+#=================================================
+# UPDATE A CONFIGURATION
+#=================================================
+ynh_script_progression "Updating configuration..."
+
+# Initialize upload_limit_bytes from media_upload_size setting
+media_upload_size=$(ynh_app_setting_get --key=media_upload_size)
+upload_limit_bytes="${media_upload_size//[!0-9]/}000000"
+
+ynh_config_add --template=".env" --destination="$install_dir/.env"
+
+# Create Meilisearch env file with secrets
+ynh_config_add --template="meilisearch.env" --destination="$install_dir/.meilisearch.env"
+
+#=================================================
+# REAPPLY SYSTEM CONFIGURATIONS
+#=================================================
+ynh_script_progression "Upgrading system configurations related to $app..."
+
+# Create Meilisearch service (if not exists)
+ynh_config_add_systemd --service="meilisearch-$app" --template="meilisearch.service"
+
+# Create/update Bonfire service
+ynh_config_add_systemd
+
+# Register services with YunoHost
+yunohost service add "meilisearch-$app" --description="Meilisearch for Bonfire" --log="/var/log/$app/meilisearch.log"
+yunohost service add $app --description="Bonfire daemon" --log="/var/log/$app/$app.log"
+
+ynh_config_add_nginx
+
+ynh_config_add_logrotate
+
+#=================================================
+# START SYSTEMD SERVICES
+#=================================================
+ynh_script_progression "Starting systemd services..."
+
+# Start Meilisearch first
+ynh_systemctl --service="meilisearch-$app" --action="start" --log_path="/var/log/$app/meilisearch.log"
+
+# Start Bonfire (migrations run automatically on startup)
+ynh_systemctl --service=$app --action="start" --log_path="/var/log/$app/$app.log" #--wait_until="Running Bonfire.Web.Endpoint" --timeout=300
+
+#=================================================
+# END OF SCRIPT
+#=================================================
+
+ynh_script_progression "Upgrade of $app completed"
