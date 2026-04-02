@@ -125,10 +125,10 @@ ram.runtime = "1000M"
     #autoupdate.asset = "bonfire-social-amd64-debian-bookworm.tar.gz"
 
     [resources.sources.meili]
-    amd64.url = "https://github.com/meilisearch/meilisearch/releases/download/v1.39.0/meilisearch-linux-amd64"
-    amd64.sha256 = "463e6c2d3c0b2313d9664936b24b1de0955967ba0959d5f2bb59e7c3954d3e72"
-    arm64.url = "https://github.com/meilisearch/meilisearch/releases/download/v1.39.0/meilisearch-linux-aarch64"
-    arm64.sha256 = "eac2a52674ea17d3b85a1a33eef92a6508ff339024680252821710f37c16def8"
+    amd64.url = "https://github.com/meilisearch/meilisearch/releases/download/v1.35.0/meilisearch-linux-amd64"
+    amd64.sha256 = "01201cecf22184dea0f66ad14570dda4b5a8a55ce498dcf7178fbe858ac0a1cc"
+    arm64.url = "https://github.com/meilisearch/meilisearch/releases/download/v1.35.0/meilisearch-linux-aarch64"
+    arm64.sha256 = "8dcfdd7902d2d37003d38b21bb0ec6a92a99a2a450c012a0233074fb1562b754"
     rename = "meilisearch"
     in_subdir = false
     extract = false
