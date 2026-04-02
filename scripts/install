@@ -78,9 +78,6 @@ chown -R $app:$app "/var/log/$app"
 #=================================================
 ynh_script_progression "Adding configuration..."
 
-# Create .env file directly (no build step needed)
-ynh_config_add --template=".env" --destination="$install_dir/.env"
-
 # Create Meilisearch env file with secrets
 ynh_config_add --template="meilisearch.env" --destination="$install_dir/.meilisearch.env"
 
