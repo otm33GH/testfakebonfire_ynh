@@ -25,7 +25,7 @@ ynh_psql_db_shell <<< "CREATE EXTENSION IF NOT EXISTS postgis WITH SCHEMA public
 ynh_script_progression "Upgrading source files..."
 
 # Download and extract new pre-built release
-ynh_setup_source --dest_dir="$install_dir" --full_replace
+ynh_setup_source --dest_dir="$install_dir" --full_replace --keep meilisearch
 
 # Download and install Meilisearch
 folder=$(dirname "$YNH_CWD")
