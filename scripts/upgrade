@@ -40,6 +40,7 @@ jq -r '.resources.sources.meili.amd64.url
        | .version')"
 
 if [ "$meili_version" != "$new_meili_version" ]; then
+ynh_safe_rm "$install_dir/meilisearch"
 ynh_setup_source --dest_dir="$install_dir" --source_id="meili"
 fi
 
